@@ -9,21 +9,37 @@
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
 
-// #define __RUN_CORE 0
+
+#define __RUN_CORE 0
+
+#define NUM_LEDS_PER_STRIP 256
+#define NUMSTRIPS 1
+#define NUM_LEDS (NUM_LEDS_PER_STRIP * NUMSTRIPS)
+#include "FastLED.h"
+// #include "I2SClocklessLedDriver.h"
 #include "parser.h"
 
+CRGB leds[NUMSTRIPS * NUM_LEDS_PER_STRIP];
+
+// int pins[NUMSTRIPS] = {23};
+#define DATA_PIN 23
+// I2SClocklessLedDriver driver;
+
+static void clearleds()
+{
+    memset(leds, 0, NUM_LEDS * 3);
+}
 long time1;
 static float _min = 9999;
 static float _max = 0;
 static uint32_t _nb_stat = 0;
 static float _totfps;
-
-static void show1()
+static void show()
 {
     // SKIPPED: check nargs (must be 3 because arg[0] is self)
     long time2 = ESP.getCycleCount();
     // driver.showPixels(WAIT);
-
+    FastLED.show();
     float k = (float)(time2 - time1) / 240000000;
     float fps = 1 / k;
     _nb_stat++;
@@ -33,15 +49,22 @@ static void show1()
         _max = fps;
     if (_nb_stat > 10)
         _totfps += fps;
-    ppf("current fps:%.2f  average:%.2f min:%.2f max:%.2f\r\n", fps, _totfps / (_nb_stat - 10), _min, _max);
+    // Serial.printf("current fps:%.2f  average:%.2f min:%.2f max:%.2f\r\n", fps, _totfps / (_nb_stat - 10), _min, _max);
     time1 = ESP.getCycleCount();
 
     // SKIPPED: check that both v1 and v2 are int numbers
     // RETURN_VALUE(VALUE_FROM_INT(0), rindex);
 }
-
-static void show2() {
-  // ppf("show 2\n"); //test without print - works
+static CRGB POSV(uint8_t h, uint8_t s, uint8_t v)
+{
+    return CHSV(h, s, v);
+}
+static void resetShowStats()
+{
+    float min = 999;
+    float max = 0;
+    _nb_stat = 0;
+    _totfps = 0;
 }
 
 class UserModLive:public SysModule {
@@ -112,15 +135,14 @@ public:
 
     // ui->initButton
 
-    addExternal("show1", externalType::function, (void *)&show1);
-    addExternal("show2", externalType::function, (void *)&show2);
+    FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
+    FastLED.setBrightness(30);
+    addExternal("leds", externalType::value, (void *)leds);
+    addExternal("show", externalType::function, (void *)&show);
+    addExternal("hsv", externalType::function, (void *)POSV);
+    addExternal("clear", externalType::function, (void *)clearleds);
+    addExternal("resetStat", externalType::function, (void *)&resetShowStats);
 
-    // addExternal("test", externalType::function, (void *)&test); //compile error ...
-
-  }
-
-  void test() {
-    ppf("hello test world\n");
   }
 
 };
