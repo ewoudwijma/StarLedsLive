@@ -12,7 +12,7 @@
 
 #define __RUN_CORE 0
 
-#define NUM_LEDS_PER_STRIP 256
+#define NUM_LEDS_PER_STRIP 64
 #define NUMSTRIPS 1
 #define NUM_LEDS (NUM_LEDS_PER_STRIP * NUMSTRIPS)
 #include "FastLED.h"
@@ -22,7 +22,7 @@
 CRGB leds[NUMSTRIPS * NUM_LEDS_PER_STRIP];
 
 // int pins[NUMSTRIPS] = {23};
-#define DATA_PIN 23
+#define DATA_PIN 16
 // I2SClocklessLedDriver driver;
 
 static void clearleds()
