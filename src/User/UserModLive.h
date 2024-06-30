@@ -10,20 +10,20 @@
 */
 
 
-#define __RUN_CORE 0
+// #define __RUN_CORE 0
 
-#define NUM_LEDS_PER_STRIP 64
+#define NUM_LEDS_PER_STRIP 256
 #define NUMSTRIPS 1
 #define NUM_LEDS (NUM_LEDS_PER_STRIP * NUMSTRIPS)
 #include "FastLED.h"
-// #include "I2SClocklessLedDriver.h"
+#include "I2SClocklessLedDriver.h"
 #include "parser.h"
 
 CRGB leds[NUMSTRIPS * NUM_LEDS_PER_STRIP];
 
-// int pins[NUMSTRIPS] = {23};
-#define DATA_PIN 16
-// I2SClocklessLedDriver driver;
+int pinsXX[NUMSTRIPS] = {2};
+// #define DATA_PIN 2
+I2SClocklessLedDriver driver;
 
 static void clearleds()
 {
@@ -34,12 +34,14 @@ static float _min = 9999;
 static float _max = 0;
 static uint32_t _nb_stat = 0;
 static float _totfps;
+static unsigned long frameCounter = 0;
 static void show()
 {
     // SKIPPED: check nargs (must be 3 because arg[0] is self)
     long time2 = ESP.getCycleCount();
-    // driver.showPixels(WAIT);
-    FastLED.show();
+    driver.showPixels(WAIT);
+    // FastLED.show();
+    frameCounter++;
     float k = (float)(time2 - time1) / 240000000;
     float fps = 1 / k;
     _nb_stat++;
@@ -49,7 +51,8 @@ static void show()
         _max = fps;
     if (_nb_stat > 10)
         _totfps += fps;
-    // Serial.printf("current fps:%.2f  average:%.2f min:%.2f max:%.2f\r\n", fps, _totfps / (_nb_stat - 10), _min, _max);
+    if (_nb_stat%1000 == 0)
+      Serial.printf("current fps:%.2f  average:%.2f min:%.2f max:%.2f\r\n", fps, _totfps / (_nb_stat - 10), _min, _max);
     time1 = ESP.getCycleCount();
 
     // SKIPPED: check that both v1 and v2 are int numbers
@@ -94,7 +97,9 @@ public:
         //set script
         uint8_t fileNr = var["value"];
 
-        SCExecutable._kill(); //kill any old tasks
+        SCExecutable._kill(); //kill any old 
+        clearleds();
+        driver.showPixels(WAIT);
 
         ppf("%s script f:%d f:%d\n", name, funType, fileNr);
 
@@ -133,16 +138,31 @@ public:
       default: return false; 
     }}); //fixture
 
+    ui->initText(parentVar, "fps", nullptr, 10, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      // case onUI:
+      //   web->addResponseV(var["id"], "comment", "f(%d leds)", eff->fixture.nrOfLeds);
+      //   return true;
+      default: return false;
+    }});
+
     // ui->initButton
 
-    FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
-    FastLED.setBrightness(30);
+    driver.initled((uint8_t*)leds,pinsXX,NUMSTRIPS,NUM_LEDS_PER_STRIP,ORDER_GRB);
+    driver.setBrightness(10);
+
+    // FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
+    // FastLED.setBrightness(30);
     addExternal("leds", externalType::value, (void *)leds);
     addExternal("show", externalType::function, (void *)&show);
     addExternal("hsv", externalType::function, (void *)POSV);
     addExternal("clear", externalType::function, (void *)clearleds);
     addExternal("resetStat", externalType::function, (void *)&resetShowStats);
 
+  }
+
+  void loop1s() {
+    mdl->setUIValueV("fps", "%lu /s", frameCounter);
+    frameCounter = 0;
   }
 
 };

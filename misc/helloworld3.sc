@@ -1,6 +1,6 @@
 external void show();
 external CRGB hsv(int h,int s,int v); 
-external CRGB leds[256]; 
+external CRGB *leds; 
 external void clear(); 
 define LED_WIDTH 16
 define LED_HEIGHT 16
