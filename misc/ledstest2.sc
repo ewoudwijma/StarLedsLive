@@ -16,7 +16,7 @@ void main()
     {
       for(int j=0;j<LED_HEIGHT;j++)
       {
-        leds[i+j*panel_width]= hsv(((i+j+h)),255,255);
+        leds[i+j*panel_width]= hsv(i+j+h,255,255);
       }
     }
     show();
