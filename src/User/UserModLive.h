@@ -157,6 +157,7 @@ public:
     addExternal("hsv", externalType::function, (void *)POSV);
     addExternal("clear", externalType::function, (void *)clearleds);
     addExternal("resetStat", externalType::function, (void *)&resetShowStats);
+  }
 
   //testing class functions instead of static
   void show2() {
