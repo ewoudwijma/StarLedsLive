@@ -73,7 +73,7 @@ static void resetShowStats()
     _totfps = 0;
 }
 
-static float _sin8(float j)
+static uint8_t _sin8(uint8_t j)
 {
   return sin8(j);
 }
@@ -141,7 +141,7 @@ public:
 
               string script = string(f.readString().c_str());
 
-              ppf("%s\n", script);
+              // ppf("%s\n", script.c_str());
 
               if (p.parse_c(&script))
               {
