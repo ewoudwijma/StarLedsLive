@@ -73,6 +73,21 @@ static void resetShowStats()
     _totfps = 0;
 }
 
+static float _sin8(float j)
+{
+  return sin8(j);
+}
+
+static float _atan2(float x, float y) 
+{
+  return atan2(x,y);
+}
+
+static float _hypot(float x, float y) 
+{
+  return hypot(x,y) ;
+}
+
 class UserModLive:public SysModule {
 
 public:
@@ -159,6 +174,10 @@ public:
     addExternal("hsv", externalType::function, (void *)POSV);
     addExternal("clear", externalType::function, (void *)clearleds);
     addExternal("resetStat", externalType::function, (void *)&resetShowStats);
+    addExternal("sin8", externalType::function, (void *)_sin8);
+    addExternal("hypot", externalType::function, (void *)_hypot);
+    addExternal("atan2", externalType::function, (void *)_atan2);
+
   }
 
   //testing class functions instead of static
