@@ -1,6 +1,4 @@
-external void show();
-external CRGB *leds;
-external CRGB hsv(int h,int s,int v); 
+external void showM();
 
 void main()
 {
@@ -11,7 +9,7 @@ void main()
     {
       leds[i]= hsv(i+h,255,255);
     }
-    show();
+    showM();
     h++;
   }
 }

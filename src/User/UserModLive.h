@@ -152,15 +152,17 @@ public:
 
     // FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
     // FastLED.setBrightness(30);
-    addExternal("leds", externalType::value, (void *)leds);
+
     addExternal("show", externalType::function, (void *)&show);
+    addExternal("showM", externalType::function, (void *)&UserModLive::showM); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
+    addExternal("leds", externalType::value, (void *)leds);
     addExternal("hsv", externalType::function, (void *)POSV);
     addExternal("clear", externalType::function, (void *)clearleds);
     addExternal("resetStat", externalType::function, (void *)&resetShowStats);
   }
 
   //testing class functions instead of static
-  void show2() {
+  void showM() {
     long time2 = ESP.getCycleCount();
     // driver.showPixels(WAIT);
     frameCounter++;
