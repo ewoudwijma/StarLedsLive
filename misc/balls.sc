@@ -4,14 +4,14 @@ external void show();
 external void clear();
 external CRGB hsv(int h, int s, int v);
 external float sin(float angle);
-//external void display(int g);
+external void display(int g);
 external void resetStat();
-define nb_balls 4
-define rmax 10
-define rmin 8
-define width 16
-define height 16
-define panel_width 16 
+define nb_balls 10
+define rmax 4
+define rmin 3
+define width 32
+define height 32
+define panel_width 32 
 
 float vx[nb_balls];
 float vy[nb_balls];
@@ -19,6 +19,43 @@ float xc[nb_balls];
 float yc[nb_balls];
 float r[nb_balls];
 int color[nb_balls];
+
+define NB_PANEL_WIDTH 2
+define NUM_STRIPS 4
+define NUM_LEDS_PER_STRIP 256
+external uint16_t *pos;
+external void map();
+external void initleds(uint32_t *pins,int num,int num_leds_per_strip);
+uint32_t pins[NUM_STRIPS]={21,19,22,23};
+
+void mapfunction()
+{
+  
+  int panelnumber = pos[0] / 256;
+  int datainpanel = pos[0] % 256;
+  int Y = panelnumber / NB_PANEL_WIDTH;
+  int X = panelnumber % NB_PANEL_WIDTH;
+  //int Y = yp;
+  //int X = Xp;
+
+  int x = datainpanel % 16;
+  int y = datainpanel / 16;
+
+  if (y % 2 == 0)
+  {
+    Y = Y * 16 + y;
+    X = X * 16 + x;
+  }
+  else
+  {
+    Y = Y * 16 + y;
+    X = X * 16 + 16 - x - 1;
+  }
+
+ pos[0]= Y * 16 * NB_PANEL_WIDTH  + X;
+
+}
+
 //CRGB cc;
 
 void drawBall(float xc, float yc, float r, int c)
@@ -31,7 +68,7 @@ void drawBall(float xc, float yc, float r, int c)
    // int endy=(float)(yc+r);
    int _xc=xc;
    int _yc=yc;
-   CRGB *_leds=leds;
+  // CRGB *_leds=leds;
    for (int i = startx; i <= _xc; i++)
    {
       for (int j = starty; j <= _yc; j++)
@@ -44,10 +81,13 @@ void drawBall(float xc, float yc, float r, int c)
          {
             v = (float)(255 * (1 - distance * distance / (r4)));
             CRGB cc=hsv(c,255,v);
-            _leds[i + j * panel_width] = cc;
-            _leds[(int)(2 * xc - i) + j * panel_width] = cc;
-            _leds[(int)(2 * xc - i) + (int)(2 * yc - j) * panel_width] = cc;
-            _leds[i + (int)(2 * yc - j) * panel_width] = cc;
+            leds[i + j * panel_width] = cc;
+           // int h=(int)(2 * xc - i) + j * panel_width;
+            leds[(int)(2 * xc - i) + j * panel_width] = cc;
+          // h=(int)(2 * xc - i) + (int)(2 * yc - j) * panel_widthsdfsdf;
+            leds[(int)(2 * xc - i) + (int)(2 * yc - j) * panel_width] = cc;
+           // h=i + (int)(2 * yc - j) * panel_width;
+            leds[i + (int)(2 * yc - j) * panel_width] = cc;
          }
       }
    }
@@ -55,13 +95,7 @@ void drawBall(float xc, float yc, float r, int c)
 
 void updateBall(int index)
 {
-///   float *__r=r;
- //  float £*__xc=xc;
-  // float *__yc=yc;
- //  float *__vx=vx;
- //  float *__vy=vy;
-   
-   float _r =r[index];
+ float _r =r[index];
    float _xc = xc[index];
    float _yc = yc[index];
    float _vx = vx[index];
@@ -98,45 +132,48 @@ void updateBall(int index)
    drawBall(_xc, _yc, _r, _color);
 }
 
+void init()
+{
+   for(int i=0;i<nb_balls;i++)
+   {
+      vx[i] = rand(280)/255+0.7;
+      vy[i] = rand(280)/255+0.5;
+      r[i] = (rmax-rmin)*(rand(280)/180) +rmin;
+      xc[i] = width/2*(rand(280)/255+0.3)+15;
+      yc[i] = height/2*(rand(280)/255+0.3)+15;
+      
+      color[i] = rand(255);
+   }  
+}
+
 void main()
 {
-resetStat();
-//cc=CRGB(255,0,0);
-for(int i=0;i<nb_balls;i++)
-{
-   vx[i] = rand(280)/255+0.7;
-   vy[i] = rand(280)/255+0.5;
-   r[i] = (rmax-rmin)*(rand(280)/180) +rmin;
-   xc[i] = width/2*(rand(280)/255+0.3)+15;
-   yc[i] = height/2*(rand(280)/255+0.3)+15;
-   
-   color[i] = rand(255);
-}  
+  resetStat();
+  initleds(pins,NUM_STRIPS,NUM_LEDS_PER_STRIP);
+  map();
+  //cc=CRGB(255,0,0);
 
-
-
-   
-   uint32_t h = 1;
-
+  init();
   
-   while (h > 0)
-   {
-      //clear();
-     for(int i=0;i<width;i++)
-     {
-        for(int j=0;j<height;j++)
-        {
-           leds[i+panel_width*j]=hsv(i+h+j,255,180);
-        }
-     }
-      for (int i = 0; i < nb_balls; i++)
-      {
-         updateBall(i);
-        // drawBall(1,1,1,CRGB(255,255,255));
-      }
+  uint32_t h = 1;
 
-      //}
-      // }
-      show();
-   }
+  while (h > 0)
+  {
+    //clear();
+    for(int i=0;i<width;i++)
+    {
+      for(int j=0;j<height;j++)
+      {
+        leds[i+panel_width*j]=hsv(i+h+j,255,180);
+      }
+    }
+    for (int i = 0; i < nb_balls; i++)
+    {
+      updateBall(i);
+      // drawBall(1,1,1,CRGB(255,255,255));
+    }
+
+    show();
+    h++;
+  }
 }

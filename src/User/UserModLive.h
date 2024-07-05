@@ -12,59 +12,69 @@
 
 // #define __RUN_CORE 0
 
-#define NUM_LEDS_PER_STRIP 256
-#define NUMSTRIPS 1
-#define NUM_LEDS (NUM_LEDS_PER_STRIP * NUMSTRIPS)
+#define __HARDWARE_MAP
+#define __NON_HEAP
+
 #include "FastLED.h"
 #include "I2SClocklessLedDriver.h"
 #include "parser.h"
 
-CRGB leds[NUMSTRIPS * NUM_LEDS_PER_STRIP];
+#define NUM_LEDS_PER_STRIP 256
+#define NUM_STRIPS 1
+#define NUM_LEDS_MAX 3072
 
-int pinsXX[NUMSTRIPS] = {2};
-// #define DATA_PIN 2
+CRGB leds[NUM_LEDS_MAX];
+uint16_t _maping[NUM_LEDS_MAX];
+
+int pins[NUM_STRIPS] = {2};
+
 I2SClocklessLedDriver driver;
 
 static void clearleds()
 {
-    memset(leds, 0, NUM_LEDS * 3);
+    memset(leds, 0, NUM_LEDS_MAX * 3);
 }
+
 long time1;
+long time4;
 static float _min = 9999;
 static float _max = 0;
 static uint32_t _nb_stat = 0;
 static float _totfps;
-
 static float fps = 0; //integer?
 static unsigned long frameCounter = 0;
-
 static void show()
 {
-    // SKIPPED: check nargs (must be 3 because arg[0] is self)
-    long time2 = ESP.getCycleCount();
-    driver.showPixels(WAIT);
-    // FastLED.show();
-    frameCounter++;
-    float k = (float)(time2 - time1) / 240000000;
-    fps = 1 / k;
-    _nb_stat++;
-    if (_min > fps && fps > 10 && _nb_stat > 10)
-        _min = fps;
-    if (_max < fps && fps < 200 && _nb_stat > 10)
-        _max = fps;
-    if (_nb_stat > 10)
-        _totfps += fps;
-    if (_nb_stat%10000 == 0)
-      ppf("current fps:%.2f  average:%.2f min:%.2f max:%.2f\r\n", fps, _totfps / (_nb_stat - 10), _min, _max);
-    time1 = ESP.getCycleCount();
+  frameCounter++;
+    
+  // SKIPPED: check nargs (must be 3 because arg[0] is self)
+  long time2 = ESP.getCycleCount();
 
-    // SKIPPED: check that both v1 and v2 are int numbers
-    // RETURN_VALUE(VALUE_FROM_INT(0), rindex);
+  driver.showPixels(WAIT);
+  long time3 = ESP.getCycleCount();
+  float k = (float)(time2 - time1) / 240000000;
+  fps = 1 / k;
+  float k2 = (float)(time3 - time2) / 240000000;
+  float fps2 = 1 / k2;
+  float k3 = (float)(time2 - time4) / 240000000;
+  float fps3 = 1 / k3;
+  _nb_stat++;
+  if (_min > fps && fps > 10 && _nb_stat > 10)
+    _min = fps;
+  if (_max < fps && fps < 5000 && _nb_stat > 10)
+    _max = fps;
+  if (_nb_stat > 10)
+    _totfps += fps;
+  if (_nb_stat%1000 == 0)
+    //Serial.printf("current show fps:%.2f\tglobal fps:%.2f\tfps animation:%.2f\taverage:%.2f\tmin:%.2f\tmax:%.2f\r\n", fps2, fps3, fps, _totfps / (_nb_stat - 10), _min, _max);
+    ppf("current show fps:%.2f\tglobal fps:%.2f\tfps animation:%.2f  average:%.2f min:%.2f max:%.2f\r\n",fps2, fps3,  fps, _totfps / (_nb_stat - 10), _min, _max);
+  time1 = ESP.getCycleCount();
+  time4 = time2;
+
+  // SKIPPED: check that both v1 and v2 are int numbers
+  // RETURN_VALUE(VALUE_FROM_INT(0), rindex);
 }
-static CRGB POSV(uint8_t h, uint8_t s, uint8_t v)
-{
-    return CHSV(h, s, v);
-}
+
 static void resetShowStats()
 {
     float min = 999;
@@ -73,21 +83,39 @@ static void resetShowStats()
     _totfps = 0;
 }
 
-static uint8_t _sin8(uint8_t j)
+uint16_t map2;
+
+uint16_t mapfunction(uint16_t pos)
 {
-  return sin8(j);
+  map2=pos;
+  SCExecutable.execute("mapfunction");
+  return map2;
 }
 
-static float _atan2(float x, float y) 
+static void __initleds(int *pins,int numstrip,int num_leds_per_strip)
 {
-  return atan2(x,y);
+  driver.num_led_per_strip = num_leds_per_strip;  
+  driver.num_strips=numstrip;  
+  for(int i=0;i<numstrip;i++)
+  {
+    driver.stripSize[i]=num_leds_per_strip;
+  }
+  driver.setPins(pins);
 }
 
-static float _hypot(float x, float y) 
-{
-  return hypot(x,y) ;
-}
+//external implementations
+static CRGB POSV(uint8_t h, uint8_t s, uint8_t v) {return CHSV(h, s, v);}
+void __map() {driver.createhardwareMap();}
+static uint8_t _sin8(uint8_t a) {return sin8(a);}
+static float _hypot(float x,float y) {return hypot(x,y);}
+static float _atan2(float x,float y) { return atan2(x,y);}
+static void dispshit(int g) { ppf("coming from assembly int %x %d", g, g);}
+static float _sin(float j) {return sin(j);}
+static void __print(char *s) {ppf("from assembly :%s\r\n", s);}
+static void showError(int line, uint32_t size, uint32_t got) { ppf("Overflow error line %d max size: %d got %d", line, size, got);}
+static void displayfloat(float j) {ppf("display float %f", j);}
 
+string ScScript;
 
 class UserModLive:public SysModule {
 
@@ -140,15 +168,14 @@ public:
               ppf("UserModLive setup script  open %s for %s failed", fileName, "r");
             else {
 
-              string script = string(f.readString().c_str());
-
+              ScScript = string(f.readString().c_str());
+              f.close();
               // ppf("%s\n", script.c_str());
 
-              if (p.parse_c(&script))
+              if (p.parse_c(&ScScript))
               {
                   SCExecutable.executeAsTask("main");
               }
-              f.close();
             }
           }
           else
@@ -162,26 +189,31 @@ public:
     ui->initText(parentVar, "fps2", nullptr, 10, true);
 
     // ui->initButton
-
-    driver.initled((uint8_t*)leds,pinsXX,NUMSTRIPS,NUM_LEDS_PER_STRIP,ORDER_GRB);
+    driver.setHmap(_maping);
+    driver.initled((uint8_t*)leds,pins,NUM_STRIPS,NUM_LEDS_PER_STRIP,ORDER_GRB);
     driver.setBrightness(10);
-
+    driver.setMapLed(mapfunction);
     // FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
     // FastLED.setBrightness(30);
 
-    addExternal("show", externalType::function, (void *)&show);
-    addExternal("showM", externalType::function, (void *)&UserModLive::showM); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
     addExternal("leds", externalType::value, (void *)leds);
+    addExternal("show", externalType::function, (void *)&show);
     addExternal("hsv", externalType::function, (void *)POSV);
     addExternal("clear", externalType::function, (void *)clearleds);
     addExternal("resetStat", externalType::function, (void *)&resetShowStats);
-    addExternal("sin8", externalType::function, (void *)_sin8);
-    addExternal("hypot", externalType::function, (void *)_hypot);
-    addExternal("atan2", externalType::function, (void *)_atan2);
+    addExternal("map", externalType::function, (void *)__map);
+    addExternal("initleds", externalType::function, (void *)__initleds);
+    addExternal("pos", externalType::value, (void *)&map2);
+    addExternal("atan2",externalType::function,(void*)_atan2);
+    addExternal("hypot",externalType::function,(void*)_hypot);
+    addExternal("sin8",externalType::function,(void*)_sin8);
 
-    addExternal("pinMode", externalType::function, (void *)&pinMode);
-    addExternal("digitalWrite", externalType::function, (void *)&digitalWrite);
-    addExternal("delay", externalType::function, (void *)&delay);
+    // addExternal("showM", externalType::function, (void *)&UserModLive::showM); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
+    // addExternal("display", externalType::function, (void *)&dispshit);
+    // addExternal("dp", externalType::function, (void *)displayfloat);
+    // addExternal("sin", externalType::function, (void *)_sin);
+    // addExternal("error", externalType::function, (void *)&showError);
+    // addExternal("print", externalType::function, (void *)__print);
 
   }
 
@@ -204,17 +236,7 @@ public:
 
 };
 
-extern UserModLive *liveM;
+extern UserModLive *live;
 
-//warnings
-//.pio/libdeps/esp32dev/asmParser/src/asm_struct_enum.h:93:1: warning: 'typedef' was ignored in this declaration
-//.pio/libdeps/esp32dev/asmParser/src/asm_parser.h:1612:45: warning: 'void heap_caps_aligned_free(void*)' is deprecated [-Wdeprecated-declarations]
+
 //asm_parser.h:325:1: warning: control reaches end of non-void function 
-
-//crash reports
-// E (31053) task_wdt: Task watchdog got triggered. The following tasks did not reset the watchdog in time:
-// E (31053) task_wdt:  - IDLE (CPU 0)
-// E (31053) task_wdt: Tasks currently running:
-// E (31053) task_wdt: CPU 0: _run_task
-// E (31053) task_wdt: CPU 1: loopTask
-// E (31053) task_wdt: Aborting.
