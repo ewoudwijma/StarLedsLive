@@ -88,6 +88,7 @@ static float _hypot(float x, float y)
   return hypot(x,y) ;
 }
 
+
 class UserModLive:public SysModule {
 
 public:
@@ -177,6 +178,10 @@ public:
     addExternal("sin8", externalType::function, (void *)_sin8);
     addExternal("hypot", externalType::function, (void *)_hypot);
     addExternal("atan2", externalType::function, (void *)_atan2);
+
+    addExternal("pinMode", externalType::function, (void *)&pinMode);
+    addExternal("digitalWrite", externalType::function, (void *)&digitalWrite);
+    addExternal("delay", externalType::function, (void *)&delay);
 
   }
 
