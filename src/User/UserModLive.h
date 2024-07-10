@@ -11,13 +11,15 @@
 
 
 // #define __RUN_CORE 0
+#pragma once
+#include "parser.h"
 
+//LEDS specific
 #define __HARDWARE_MAP
 #define __NON_HEAP
 
 #include "FastLED.h"
 #include "I2SClocklessLedDriver.h"
-#include "parser.h"
 
 #define NUM_LEDS_PER_STRIP 256
 #define NUM_STRIPS 1
@@ -34,6 +36,7 @@ static void clearleds()
 {
     memset(leds, 0, NUM_LEDS_MAX * 3);
 }
+//END LEDS specific
 
 long time1;
 long time4;
@@ -43,6 +46,9 @@ static uint32_t _nb_stat = 0;
 static float _totfps;
 static float fps = 0; //integer?
 static unsigned long frameCounter = 0;
+
+//external function implementation (tbd: move into class)
+
 static void show()
 {
   frameCounter++;
@@ -50,10 +56,11 @@ static void show()
   // SKIPPED: check nargs (must be 3 because arg[0] is self)
   long time2 = ESP.getCycleCount();
 
-  driver.showPixels(WAIT);
+  driver.showPixels(WAIT); // LEDS specific
+
   long time3 = ESP.getCycleCount();
   float k = (float)(time2 - time1) / 240000000;
-  fps = 1 / k;
+  fps = 1 / k; //StarBase: class variable so it can be shown in UI!!!
   float k2 = (float)(time3 - time2) / 240000000;
   float fps2 = 1 / k2;
   float k3 = (float)(time2 - time4) / 240000000;
@@ -83,15 +90,23 @@ static void resetShowStats()
     _totfps = 0;
 }
 
-uint16_t map2;
+static void dispshit(int g) { ppf("coming from assembly int %x %d", g, g);}
+static void __print(char *s) {ppf("from assembly :%s\r\n", s);}
+static void showError(int line, uint32_t size, uint32_t got) { ppf("Overflow error line %d max size: %d got %d", line, size, got);}
+static void displayfloat(float j) {ppf("display float %f", j);}
 
+static float _hypot(float x,float y) {return hypot(x,y);}
+static float _atan2(float x,float y) { return atan2(x,y);}
+static float _sin(float j) {return sin(j);}
+
+//LEDS specific
+uint16_t map2;
 uint16_t mapfunction(uint16_t pos)
 {
   map2=pos;
   SCExecutable.execute("mapfunction");
   return map2;
 }
-
 static void __initleds(int *pins,int numstrip,int num_leds_per_strip)
 {
   driver.num_led_per_strip = num_leds_per_strip;  
@@ -107,21 +122,16 @@ static void __initleds(int *pins,int numstrip,int num_leds_per_strip)
 static CRGB POSV(uint8_t h, uint8_t s, uint8_t v) {return CHSV(h, s, v);}
 void __map() {driver.createhardwareMap();}
 static uint8_t _sin8(uint8_t a) {return sin8(a);}
-static float _hypot(float x,float y) {return hypot(x,y);}
-static float _atan2(float x,float y) { return atan2(x,y);}
-static void dispshit(int g) { ppf("coming from assembly int %x %d", g, g);}
-static float _sin(float j) {return sin(j);}
-static void __print(char *s) {ppf("from assembly :%s\r\n", s);}
-static void showError(int line, uint32_t size, uint32_t got) { ppf("Overflow error line %d max size: %d got %d", line, size, got);}
-static void displayfloat(float j) {ppf("display float %f", j);}
 
-string ScScript;
+//END LEDS specific
+
 
 class UserModLive:public SysModule {
 
 public:
 
   Parser p = Parser();
+  char fileName[32] = "";
 
   UserModLive() :SysModule("Live") {
     isEnabled = false; //need to enable after fresh setup
@@ -144,43 +154,25 @@ public:
         //set script
         uint8_t fileNr = var["value"];
 
-        SCExecutable._kill(); //kill any old 
-        clearleds();
-        driver.showPixels(WAIT);
-        fps = 0;
-
         ppf("%s script f:%d f:%d\n", name, funType, fileNr);
 
+        char fileName[32] = "";
+
         if (fileNr > 0) { //not None
-
           fileNr--;  //-1 as none is no file
-
-          char fileName[32] = "";
-
           files->seqNrToName(fileName, fileNr, ".sc");
-
           // ppf("%s script f:%d f:%d\n", name, funType, fileNr);
-
-          if (strcmp(fileName, "") != 0) {
-
-            File f = files->open(fileName, "r");
-            if (!f)
-              ppf("UserModLive setup script  open %s for %s failed", fileName, "r");
-            else {
-
-              ScScript = string(f.readString().c_str());
-              f.close();
-              // ppf("%s\n", script.c_str());
-
-              if (p.parse_c(&ScScript))
-              {
-                  SCExecutable.executeAsTask("main");
-              }
-            }
-          }
-          else
-            ppf("UserModLive setup file for %d not found", fileNr);
         }
+
+        if (strcmp(fileName, "") != 0)
+          run(fileName, true); //force a new file to run
+        else {
+          SCExecutable._kill(); //kill any old 
+          clearleds(); //LEDS specific
+          driver.showPixels(WAIT); //LEDS specific
+          fps = 0;
+        }
+
         return true; }
       default: return false; 
     }}); //script
@@ -188,7 +180,26 @@ public:
     ui->initText(parentVar, "fps1", nullptr, 10, true);
     ui->initText(parentVar, "fps2", nullptr, 10, true);
 
-    // ui->initButton
+    //Live scripts defaults
+    addExternal("show", externalType::function, (void *)&show);
+    addExternal("showM", externalType::function, (void *)&UserModLive::showM); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
+    addExternal("resetStat", externalType::function, (void *)&resetShowStats);
+
+    addExternal("display", externalType::function, (void *)&dispshit);
+    addExternal("dp", externalType::function, (void *)displayfloat);
+    addExternal("error", externalType::function, (void *)&showError);
+    addExternal("print", externalType::function, (void *)__print);
+
+    addExternal("atan2",externalType::function,(void*)_atan2);
+    addExternal("hypot",externalType::function,(void*)_hypot);
+    addExternal("sin", externalType::function, (void *)_sin);
+
+    //added by StarBase
+    addExternal("pinMode", externalType::function, (void *)&pinMode);
+    addExternal("digitalWrite", externalType::function, (void *)&digitalWrite);
+    addExternal("delay", externalType::function, (void *)&delay);
+
+    //LEDS specific
     driver.setHmap(_maping);
     driver.initled((uint8_t*)leds,pins,NUM_STRIPS,NUM_LEDS_PER_STRIP,ORDER_GRB);
     driver.setBrightness(10);
@@ -197,23 +208,14 @@ public:
     // FastLED.setBrightness(30);
 
     addExternal("leds", externalType::value, (void *)leds);
-    addExternal("show", externalType::function, (void *)&show);
     addExternal("hsv", externalType::function, (void *)POSV);
     addExternal("clear", externalType::function, (void *)clearleds);
-    addExternal("resetStat", externalType::function, (void *)&resetShowStats);
     addExternal("map", externalType::function, (void *)__map);
     addExternal("initleds", externalType::function, (void *)__initleds);
     addExternal("pos", externalType::value, (void *)&map2);
-    addExternal("atan2",externalType::function,(void*)_atan2);
-    addExternal("hypot",externalType::function,(void*)_hypot);
     addExternal("sin8",externalType::function,(void*)_sin8);
 
-    // addExternal("showM", externalType::function, (void *)&UserModLive::showM); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
-    // addExternal("display", externalType::function, (void *)&dispshit);
-    // addExternal("dp", externalType::function, (void *)displayfloat);
-    // addExternal("sin", externalType::function, (void *)_sin);
-    // addExternal("error", externalType::function, (void *)&showError);
-    // addExternal("print", externalType::function, (void *)__print);
+    //END LEDS specific
 
   }
 
@@ -234,9 +236,42 @@ public:
     frameCounter = 0;
   }
 
+  void run(const char *fileName, bool force = false) {
+    ppf("live run n:%s o:%s (f:%d)\n", fileName, this->fileName, force);
+
+    if (!force && strcmp(fileName, this->fileName) != 0) // if another fileName then force should be true;
+      return;
+
+    SCExecutable._kill(); //kill any old 
+    clearleds(); //LEDS specific
+    driver.showPixels(WAIT); //LEDS specific
+    fps = 0;
+
+    if (strcmp(fileName, "") != 0) {
+
+      File f = files->open(fileName, "r");
+      if (!f)
+        ppf("UserModLive setup script open %s for %s failed\n", fileName, "r");
+      else {
+
+        string scScript = string(f.readString().c_str());
+
+        ppf("%s\n", scScript);
+
+        if (p.parse_c(&scScript))
+        {
+          SCExecutable.executeAsTask("main");
+          strcpy(this->fileName, fileName);
+        }
+        f.close();
+      }
+    }
+    else
+      ppf("UserModLive setup file for %s not found\n", fileName);
+  }
 };
 
-extern UserModLive *live;
+extern UserModLive *liveM;
 
 
 //asm_parser.h:325:1: warning: control reaches end of non-void function 
