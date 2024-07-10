@@ -9,9 +9,9 @@ external void resetStat();
 define nb_balls 10
 define rmax 4
 define rmin 3
-define width 32
-define height 32
-define panel_width 32 
+define width 16
+define height 16
+define panel_width 16 
 
 float vx[nb_balls];
 float vy[nb_balls];
@@ -20,8 +20,8 @@ float yc[nb_balls];
 float r[nb_balls];
 int color[nb_balls];
 
-define NB_PANEL_WIDTH 2
-define NUM_STRIPS 4
+define NB_PANEL_WIDTH 1
+define NUM_STRIPS 1
 define NUM_LEDS_PER_STRIP 256
 external uint16_t *pos;
 external void map();
