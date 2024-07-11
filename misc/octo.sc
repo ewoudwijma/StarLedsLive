@@ -1,11 +1,6 @@
 //import memset
 //save_reg
-external CRGB *leds;
-define width 16
-define height 16
-define NUM_LEDS 256
 define PI 3.1415926535
-define panel_width 16
 define speed 1
 define nb_branches 5
 uint8_t C_X ;
@@ -13,12 +8,6 @@ uint8_t C_Y;
 uint8_t mapp;
 uint8_t rMapRadius[NUM_LEDS];
 uint8_t rMapAngle[NUM_LEDS];
-
-define NB_PANEL_WIDTH 1
-define NUM_STRIPS 1
-define NUM_LEDS_PER_STRIP 256
-external uint16_t *pos;
-uint32_t pins[NUM_STRIPS]={2};
 
 void mapfunction()
 {

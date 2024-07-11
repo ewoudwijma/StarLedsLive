@@ -1,19 +1,3 @@
-external void show();
-external CRGB hsv(int h,int s,int v); 
-external CRGB *leds; 
-external void clear(); 
-define LED_WIDTH 32
-define LED_HEIGHT 32
-define panel_width 16
-
-define NB_PANEL_WIDTH 1
-define NUM_STRIPS 1
-define NUM_LEDS_PER_STRIP 256
-external uint16_t *pos;
-external void map();
-external void initleds(uint32_t *pins,int num,int num_leds_per_strip);
- uint32_t pins[NUM_STRIPS]={21,19,22,23};
-
 void mapfunction()
 {
   
@@ -51,14 +35,14 @@ void main()
   clear();
   while(h>0)
   {
-    for(int i=0;i<LED_WIDTH;i++)
+    for(int i=0;i<width;i++)
     {
-      for(int j=0;j<LED_HEIGHT;j++)
+      for(int j=0;j<height;j++)
       {
         leds[i+j*panel_width]= hsv(i+j+h,255,255);
       }
     }
-    leds[h%(LED_HEIGHT*LED_WIDTH)]=CRGB(0255,255,255);
+    leds[h%(height*width)]=CRGB(0255,255,255);
     show();
     h++;
   }

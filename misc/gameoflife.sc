@@ -1,24 +1,8 @@
 import rand
-external CRGB *leds;
-external void show();
-external void clear();
-external CRGB hsv(uint8_t h, uint8_t s, uint8_t v);
-external void resetStat();
-define width 16
-define height 16
-define panel_width 16 
 
 char copy[1024];  //be careful to change this
 uint8_t line1[width];
 uint8_t linec[width];
-
-define NB_PANEL_WIDTH 1
-define NUM_STRIPS 1
-define NUM_LEDS_PER_STRIP 256
-external uint16_t *pos;
-external void map();
-external void initleds(uint32_t *pins,int num,int num_leds_per_strip);
- uint32_t pins[NUM_STRIPS]={21,19,22,23};
 
 void mapfunction()
 {

@@ -22,8 +22,12 @@
 #include "I2SClocklessLedDriver.h"
 
 #define NUM_LEDS_PER_STRIP 256
-#define NUM_STRIPS 1
-#define NUM_LEDS_MAX 3072
+#define NUM_STRIPS 1 //nr of panels?
+#define NUM_LEDS_MAX 3072 //NUM_LEDS_PER_STRIP * NUM_LEDS_MAX ?
+
+#define width 16
+#define height 16
+#define NB_PANEL_WIDTH 1 //num strips / nb panel width = nb_panel height ???
 
 CRGB leds[NUM_LEDS_MAX];
 uint16_t _maping[NUM_LEDS_MAX];
@@ -180,7 +184,7 @@ public:
 
     //Live scripts defaults
     addExternalFun("void", "show", "()", (void *)&show);
-    addExternalFun("void", "showM", "()", (void *)&UserModLive::showM); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
+    // addExternalFun("void", "showM", "()", (void *)&UserModLive::showM); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
     addExternalFun("void", "resetStat", "()", (void *)&resetShowStats);
 
     addExternalFun("void", "display", "(int a1)", (void *)&dispshit);
@@ -192,7 +196,7 @@ public:
     addExternalFun("float", "hypot","(float a1, float a2)",(void*)_hypot);
     addExternalFun("float", "sin", "(float a1)", (void *)_sin);
 
-    //added by StarBase
+    // added by StarBase
     addExternalFun("void", "pinMode", "(int a1, int a2)", (void *)&pinMode);
     addExternalFun("void", "digitalWrite", "(int a1, int a2)", (void *)&digitalWrite);
     addExternalFun("void", "delay", "(int a1)", (void *)&delay);
@@ -209,19 +213,41 @@ public:
     // FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
     // FastLED.setBrightness(30);
 
-    addExternal("leds", externalType::value, (void *)leds);
-    addExternal("pos", externalType::value, (void *)&map2);
+    addExternalVal("CRGB *", "leds", (void *)leds);
     addExternalFun("CRGB", "hsv", "(int a1, int a2, int a3)", (void *)POSV);
     addExternalFun("void", "clear", "()", (void *)clearleds);
-    addExternalFun("void", "map", "()", (void *)__map);
     addExternalFun("void", "initleds", "(int *a1, int a2, int a3)", (void *)__initleds);
-    addExternalFun("int", "sin8","(int a1)",(void*)_sin8);
+    addExternalFun("uint8_t", "sin8","(uint8_t a1)",(void*)_sin8); //using int here causes value must be between 0 and 16 error!!!
+
+    //mapping stuff
+    addExternalVal("uint16_t *", "pos", (void *)&map2); //used in map function
+    addExternalFun("void", "map", "()", (void *)__map);
+
+    scPreScript += "define width " + to_string(width) + "\n";
+    scPreScript += "define height " + to_string(height) + "\n";
+    scPreScript += "define NUM_LEDS " + to_string(width * height) + "\n";
+    scPreScript += "define panel_width " + to_string(width) + "\n";  //isn't panel_width always the same as width?
+    scPreScript += "define NB_PANEL_WIDTH " + to_string(NB_PANEL_WIDTH) + "\n";
+    scPreScript += "define NUM_STRIPS " + to_string(NUM_STRIPS) + "\n";
+    scPreScript += "define NUM_LEDS_PER_STRIP " + to_string(NUM_LEDS_PER_STRIP) + "\n";
+    scPreScript += "uint32_t pins[NUM_STRIPS]={";
+    char sep[2] = "";
+    for (int i= 0; i<NUM_STRIPS; i++) {
+      scPreScript += sep + to_string(pins[i]);
+      strcpy(sep, ",");
+    }
+    scPreScript += "};\n";
 
     //END LEDS specific
 
+  } //setup
+
+  void addExternalVal(string result, string name, void * ptr) {
+    addExternal(name, externalType::value, ptr);
+    scPreScript += "external " + result + " " + name + ";\n";
   }
 
-  void addExternalFun(string result, string name, string parameters,void * ptr) {
+  void addExternalFun(string result, string name, string parameters, void * ptr) {
     addExternal(name, externalType::function, ptr);
     scPreScript += "external " + result + " " + name + parameters + ";\n";
   }
@@ -277,7 +303,7 @@ public:
 
         string scScript = scPreScript + string(f.readString().c_str());
 
-        Serial.println(scScript.c_str());
+        Serial.println(scPreScript.c_str());
 
         if (p.parse_c(&scScript))
         {

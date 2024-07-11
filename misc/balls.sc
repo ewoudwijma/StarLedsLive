@@ -1,17 +1,7 @@
 import rand
-external CRGB *leds;
-external void show();
-external void clear();
-external CRGB hsv(int h, int s, int v);
-external float sin(float angle);
-external void display(int g);
-external void resetStat();
 define nb_balls 10
 define rmax 4
 define rmin 3
-define width 16
-define height 16
-define panel_width 16 
 
 float vx[nb_balls];
 float vy[nb_balls];
@@ -19,14 +9,6 @@ float xc[nb_balls];
 float yc[nb_balls];
 float r[nb_balls];
 int color[nb_balls];
-
-define NB_PANEL_WIDTH 1
-define NUM_STRIPS 1
-define NUM_LEDS_PER_STRIP 256
-external uint16_t *pos;
-external void map();
-external void initleds(uint32_t *pins,int num,int num_leds_per_strip);
-uint32_t pins[NUM_STRIPS]={21,19,22,23};
 
 void mapfunction()
 {

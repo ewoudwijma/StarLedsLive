@@ -7,17 +7,7 @@
 
 //save_reg
 //safe_mode
-external void show();
-external CRGB leds[12288];
-external CRGB hsv(int h, int s, int v);
-external void dp(float h);
-external void display(int h);
-external void resetStat();
-external void clear();
 define maxIterations 15
-define width 16
-define height 16
-define panel_width 16
 define scale 0.5
 uint32_t __deltamillis[1];
 
@@ -40,14 +30,6 @@ __ASM__ uint32_t millis()
    "s32i a13,a4,0"
    "retw.n"
 }
-
-define NB_PANEL_WIDTH 1
-define NUM_STRIPS 1
-define NUM_LEDS_PER_STRIP 256
-external uint16_t *pos;
-external void map();
-external void initleds(uint32_t *pins,int num,int num_leds_per_strip);
- uint32_t pins[NUM_STRIPS]={21,19,22,23};
 
 void mapfunction()
 {
