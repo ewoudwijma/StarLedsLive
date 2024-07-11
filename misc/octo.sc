@@ -1,12 +1,6 @@
-import memset
-save_reg
+//import memset
+//save_reg
 external CRGB *leds;
-external void show();
-external CRGB hsv(uint8_t h,uint8_t s,uint8_t v);
-external uint8_t sin8(uint8_t a);
-external float hypot(float x,float y);
-external float atan2(float x,float y);
-external void resetStat();
 define width 16
 define height 16
 define NUM_LEDS 256
@@ -24,13 +18,10 @@ define NB_PANEL_WIDTH 1
 define NUM_STRIPS 1
 define NUM_LEDS_PER_STRIP 256
 external uint16_t *pos;
-external void map();
-external void initleds(uint32_t *pins,int num,int num_leds_per_strip);
- uint32_t pins[NUM_STRIPS]={21,19,22,23};
+uint32_t pins[NUM_STRIPS]={2};
 
 void mapfunction()
 {
-  
   int panelnumber = pos[0] / 256;
   int datainpanel = pos[0] % 256;
   int Y = panelnumber / NB_PANEL_WIDTH;
@@ -52,50 +43,50 @@ void mapfunction()
     X = X * 16 + 16 - x - 1;
   }
 
- pos[0]= Y * 16 * NB_PANEL_WIDTH  + X;
+  pos[0]= Y * 16 * NB_PANEL_WIDTH  + X;
 
 }
+
 void init()
 {
   C_X = width / 2;
- C_Y = height / 2;
- mapp = 255 / width;
-for (int x = -C_X; x < C_X + (width % 2); x++) {
-      for (int y = -C_Y; y < C_Y + (height % 2); y++) {
+  C_Y = height / 2;
+  mapp = 255 / width;
+  for (int x = -C_X; x < C_X + (width % 2); x++) {
+    for (int y = -C_Y; y < C_Y + (height % 2); y++) {
 
-          float h=128*(atan2(y, x)/PI);
-        rMapAngle[(x + C_X) *height+y + C_Y]= (int)(h);
-       h=hypot(x,y)*mapp;
-         rMapRadius[(x + C_X)*height +y + C_Y] = (int)(h); //thanks Sutaburosu
-      }
+      float h=128*(atan2(y, x)/PI);
+      rMapAngle[(x + C_X) *height+y + C_Y]= (int)(h);
+      h=hypot(x,y)*mapp;
+      rMapRadius[(x + C_X)*height +y + C_Y] = (int)(h); //thanks Sutaburosu
     }
+  }
 }
 
 
 void main() {
   initleds(pins,NUM_STRIPS,NUM_LEDS_PER_STRIP);
-    map();
-resetStat();
+  map();
+  resetStat();
   init();
 
-   uint32_t t;
+  uint32_t t;
   //t = speed;
   while(2>1)
   {
-  
- // memset(leds,0,4096*3);
-  for (uint8_t x = 0; x < width; x++) {
-    for (uint8_t y = 0; y < height; y++) {
-      uint8_t angle = rMapAngle[x*height+y];
-      uint8_t radius = rMapRadius[x*height+y];
+    // memset(leds,0,4096*3);
+    for (uint8_t x = 0; x < width; x++) {
+      for (uint8_t y = 0; y < height; y++) {
+        uint8_t angle = rMapAngle[x*height+y];
+        uint8_t radius = rMapRadius[x*height+y];
 
- leds[y*panel_width+x] = hsv(t + radius, 255, sin8(t*4+sin8(t * 4 - radius)+angle*nb_branches));
-     //int h=sin8(t*4+sin8(t * 4 - radius)+angle*nb_branches);
-    // leds[y*panel_width+x] = hsv(t + radius, 255, h);
+        leds[y*panel_width+x] = hsv(t + radius, 255, sin8(t*4+sin8(t * 4 - radius)+angle*nb_branches));
+        //int h=sin8(t*4+sin8(t * 4 - radius)+angle*nb_branches);
+        // leds[y*panel_width+x] = hsv(t + radius, 255, h);
+      }
     }
-  }
-  show();
-  t=t+speed;
-  }
+    show();
+    t=t+speed;
+}
   //delay(16);
 }

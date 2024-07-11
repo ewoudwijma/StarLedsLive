@@ -210,12 +210,12 @@ public:
     // FastLED.setBrightness(30);
 
     addExternal("leds", externalType::value, (void *)leds);
-    addExternal("hsv", externalType::function, (void *)POSV);
-    addExternal("clear", externalType::function, (void *)clearleds);
-    addExternal("map", externalType::function, (void *)__map);
-    addExternal("initleds", externalType::function, (void *)__initleds);
     addExternal("pos", externalType::value, (void *)&map2);
-    addExternal("sin8",externalType::function,(void*)_sin8);
+    addExternalFun("hsv", "(int a1, int a2, int a3)", (void *)POSV);
+    addExternalFun("clear", "()", (void *)clearleds);
+    addExternalFun("map", "()", (void *)__map);
+    addExternalFun("initleds", "(int a1, int a2, int a3)", (void *)__initleds);
+    addExternalFun("sin8","(int a1)",(void*)_sin8);
 
     //END LEDS specific
 
