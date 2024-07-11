@@ -179,23 +179,23 @@ public:
     ui->initText(parentVar, "fps2", nullptr, 10, true);
 
     //Live scripts defaults
-    addExternalFun("show", "()", (void *)&show);
-    addExternalFun("showM", "()", (void *)&UserModLive::showM); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
-    addExternalFun("resetStat", "()", (void *)&resetShowStats);
+    addExternalFun("void", "show", "()", (void *)&show);
+    addExternalFun("void", "showM", "()", (void *)&UserModLive::showM); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
+    addExternalFun("void", "resetStat", "()", (void *)&resetShowStats);
 
-    addExternalFun("display", "(int a1)", (void *)&dispshit);
-    addExternalFun("dp", "(float a1)", (void *)displayfloat);
-    addExternalFun("error", "(int a1, int a2, int a3)", (void *)&showError);
-    addExternalFun("print", "(char * a1)", (void *)__print);
+    addExternalFun("void", "display", "(int a1)", (void *)&dispshit);
+    addExternalFun("void", "dp", "(float a1)", (void *)displayfloat);
+    addExternalFun("void", "error", "(int a1, int a2, int a3)", (void *)&showError);
+    addExternalFun("void", "print", "(char * a1)", (void *)__print);
 
-    addExternalFun("atan2","(float a1, float a2)",(void*)_atan2);
-    addExternalFun("hypot","(float a1, float a2)",(void*)_hypot);
-    addExternalFun("sin", "(float a1)", (void *)_sin);
+    addExternalFun("float", "atan2","(float a1, float a2)",(void*)_atan2);
+    addExternalFun("float", "hypot","(float a1, float a2)",(void*)_hypot);
+    addExternalFun("float", "sin", "(float a1)", (void *)_sin);
 
     //added by StarBase
-    addExternalFun("pinMode", "(int a1, int a2)", (void *)&pinMode);
-    addExternalFun("digitalWrite", "(int a1, int a2)", (void *)&digitalWrite);
-    addExternalFun("delay", "(int a1)", (void *)&delay);
+    addExternalFun("void", "pinMode", "(int a1, int a2)", (void *)&pinMode);
+    addExternalFun("void", "digitalWrite", "(int a1, int a2)", (void *)&digitalWrite);
+    addExternalFun("void", "delay", "(int a1)", (void *)&delay);
 
     // addExternalFun("delay", [](int ms) {delay(ms);});
     // addExternalFun("digitalWrite", [](int pin, int val) {digitalWrite(pin, val);});
@@ -211,19 +211,19 @@ public:
 
     addExternal("leds", externalType::value, (void *)leds);
     addExternal("pos", externalType::value, (void *)&map2);
-    addExternalFun("hsv", "(int a1, int a2, int a3)", (void *)POSV);
-    addExternalFun("clear", "()", (void *)clearleds);
-    addExternalFun("map", "()", (void *)__map);
-    addExternalFun("initleds", "(int a1, int a2, int a3)", (void *)__initleds);
-    addExternalFun("sin8","(int a1)",(void*)_sin8);
+    addExternalFun("CRGB", "hsv", "(int a1, int a2, int a3)", (void *)POSV);
+    addExternalFun("void", "clear", "()", (void *)clearleds);
+    addExternalFun("void", "map", "()", (void *)__map);
+    addExternalFun("void", "initleds", "(int *a1, int a2, int a3)", (void *)__initleds);
+    addExternalFun("int", "sin8","(int a1)",(void*)_sin8);
 
     //END LEDS specific
 
   }
 
-  void addExternalFun(string name, string parameters,void * ptr) {
+  void addExternalFun(string result, string name, string parameters,void * ptr) {
     addExternal(name, externalType::function, ptr);
-    scPreScript += "external void " + name + parameters + ";\n";
+    scPreScript += "external " + result + " " + name + parameters + ";\n";
   }
 
   // void addExternalFun(string name, std::function<void(int)> fun) {
@@ -277,7 +277,7 @@ public:
 
         string scScript = scPreScript + string(f.readString().c_str());
 
-        // ppf("%s\n", scScript.c_str());
+        Serial.println(scScript.c_str());
 
         if (p.parse_c(&scScript))
         {
