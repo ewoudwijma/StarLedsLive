@@ -307,6 +307,7 @@ public:
 
         if (p.parse_c(&scScript))
         {
+          ppf("parsing done\n");
           SCExecutable.executeAsTask("main");
           strcpy(this->fileName, fileName);
         }
