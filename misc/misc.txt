@@ -1,4 +1,8 @@
+asmParser
+    parseExpr
+        while (Match(TokenAddition) || Match(TokenSubstraction) || Match(TokenShiftLeft) || Match(TokenShiftRight))
 
+            Serial.printf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
 
 WebHook to MM discord
 https://discord.com/api/webhooks/1229821142479536179/UeO3ryPqUyHABYTAuGtHZK6t7yghM0ZETN0LUYpg32KBleGhm-zvaYDzkyYjiqaVqt0T/github

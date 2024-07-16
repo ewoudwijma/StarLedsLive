@@ -226,7 +226,7 @@ public:
     scPreScript += "define width " + to_string(width) + "\n";
     scPreScript += "define height " + to_string(height) + "\n";
     scPreScript += "define NUM_LEDS " + to_string(width * height) + "\n";
-    scPreScript += "define panel_width " + to_string(width) + "\n";  //isn't panel_width always the same as width?
+    scPreScript += "define panel_width " + to_string(width) + "\n"; //isn't panel_width always the same as width?
     scPreScript += "define NB_PANEL_WIDTH " + to_string(NB_PANEL_WIDTH) + "\n";
     scPreScript += "define NUM_STRIPS " + to_string(NUM_STRIPS) + "\n";
     scPreScript += "define NUM_LEDS_PER_STRIP " + to_string(NUM_LEDS_PER_STRIP) + "\n";
@@ -305,9 +305,22 @@ public:
 
         Serial.println(scPreScript.c_str());
 
+        unsigned preScriptNrOfLines = 0;
+        for(int i = 0; i < scPreScript.length(); i++)
+        {
+          if (scPreScript[i] == '\n') 
+            preScriptNrOfLines++;
+        }
+
+        ppf("preScript has %d lines\n", preScriptNrOfLines);
+        ppf("Before parsing\n");
+        ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
+
         if (p.parse_c(&scScript))
         {
           ppf("parsing done\n");
+          ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
+
           SCExecutable.executeAsTask("main");
           strcpy(this->fileName, fileName);
         }
