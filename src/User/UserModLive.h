@@ -23,7 +23,7 @@
 
 #define NUM_LEDS_PER_STRIP 256
 #define NUM_STRIPS 1 //nr of panels?
-#define NUM_LEDS_MAX 3072 //NUM_LEDS_PER_STRIP * NUM_LEDS_MAX ?
+#define NUM_LEDS_MAX 1024 //NUM_LEDS_PER_STRIP * NUM_LEDS_MAX ?
 
 #define width 16
 #define height 16
