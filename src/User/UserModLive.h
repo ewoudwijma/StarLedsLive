@@ -226,20 +226,20 @@ public:
     addExternalVal("uint16_t *", "pos", (void *)&map2); //used in map function
     addExternalFun("void", "map", "()", (void *)__map);
 
-    scPreScript += "define width " + to_string(width) + "\n";
-    scPreScript += "define height " + to_string(height) + "\n";
-    scPreScript += "define NUM_LEDS " + to_string(width * height) + "\n";
-    scPreScript += "define panel_width " + to_string(width) + "\n"; //isn't panel_width always the same as width?
-    scPreScript += "define NB_PANEL_WIDTH " + to_string(NB_PANEL_WIDTH) + "\n";
-    scPreScript += "define NUM_STRIPS " + to_string(NUM_STRIPS) + "\n";
-    scPreScript += "define NUM_LEDS_PER_STRIP " + to_string(NUM_LEDS_PER_STRIP) + "\n";
-    scPreScript += "uint32_t pins[NUM_STRIPS]={";
+    scPreCustomScript += "define width " + to_string(width) + "\n";
+    scPreCustomScript += "define height " + to_string(height) + "\n";
+    scPreCustomScript += "define NUM_LEDS " + to_string(width * height) + "\n";
+    scPreCustomScript += "define panel_width " + to_string(width) + "\n"; //isn't panel_width always the same as width?
+    scPreCustomScript += "define NB_PANEL_WIDTH " + to_string(NB_PANEL_WIDTH) + "\n";
+    scPreCustomScript += "define NUM_STRIPS " + to_string(NUM_STRIPS) + "\n";
+    scPreCustomScript += "define NUM_LEDS_PER_STRIP " + to_string(NUM_LEDS_PER_STRIP) + "\n";
+    scPreCustomScript += "uint32_t pins[NUM_STRIPS]={";
     char sep[2] = "";
     for (int i= 0; i<NUM_STRIPS; i++) {
-      scPreScript += sep + to_string(pins[i]);
+      scPreCustomScript += sep + to_string(pins[i]);
       strcpy(sep, ",");
     }
-    scPreScript += "};\n";
+    scPreCustomScript += "};\n";
 
     //END LEDS specific
 
