@@ -21,13 +21,18 @@
 #include "FastLED.h"
 #include "I2SClocklessLedDriver.h"
 
-#define NUM_LEDS_PER_STRIP 256
-#define NUM_STRIPS 1 //nr of panels?
-#define NUM_LEDS_MAX 1024 //NUM_LEDS_PER_STRIP * NUM_LEDS_MAX ?
+//panel
+#define NUM_LEDS_PER_STRIP 256 //strip or panel
+#define panel_width 16 //panel_height = NUM_LEDS_PER_STRIP / panel_width
+//panels
+#define NUM_STRIPS 16 //nr of panels?, if > 16 then driver complains: .pio/libdeps/esp32dev/I2SClocklessLedDriver/src/I2SClocklessLedDriver.h:1061:31: warning: iteration 16 invokes undefined behavior [-Waggressive-loop-optimizations]
+#define NB_PANEL_WIDTH 4 //num strips / nb panel width = nb_panel height ?
+//leds
+#define NUM_LEDS_MAX (7168-2*1024) //NUM_LEDS_PER_STRIP * NUM_STRIPS <= NUM_LEDS_MAX ?
 
-#define width 16
-#define height 16
-#define NB_PANEL_WIDTH 1 //num strips / nb panel width = nb_panel height ???
+//derived values
+#define width (panel_width * NB_PANEL_WIDTH)
+#define height (NUM_LEDS_PER_STRIP * NUM_STRIPS / width)
 
 CRGB leds[NUM_LEDS_MAX];
 uint16_t _maping[NUM_LEDS_MAX];
@@ -38,7 +43,7 @@ I2SClocklessLedDriver driver;
 
 static void clearleds()
 {
-    memset(leds, 0, NUM_LEDS_MAX * 3);
+    memset(leds, 0, NUM_LEDS_MAX * sizeof(CRGB));
 }
 //END LEDS specific
 
@@ -104,6 +109,20 @@ static float _hypot(float x,float y) {return hypot(x,y);}
 static float _atan2(float x,float y) { return atan2(x,y);}
 static float _sin(float j) {return sin(j);}
 
+//pre and post for SCExecutable.setPrekill(pre, post);
+static void preKill() {
+  //Serial.printf("ii\r\n");
+  driver.__enableDriver = false;
+  while (driver.isDisplaying) {};
+  //delay(20);
+}
+static void postKill() {
+  //delay(10);
+  //Serial.printf("iiend\r\n");
+  driver.__enableDriver = true;
+}
+
+
 //LEDS specific
 uint16_t map2;
 uint16_t mapfunction(uint16_t pos)
@@ -112,6 +131,7 @@ uint16_t mapfunction(uint16_t pos)
   SCExecutable.execute("mapfunction");
   return map2;
 }
+//set driver pins
 static void __initleds(int *pins,int numstrip,int num_leds_per_strip)
 {
   driver.num_led_per_strip = num_leds_per_strip;  
@@ -129,7 +149,6 @@ void __map() {driver.createhardwareMap();}
 static uint8_t _sin8(uint8_t a) {return sin8(a);}
 
 //END LEDS specific
-
 
 class UserModLive:public SysModule {
 
@@ -219,21 +238,24 @@ public:
     addExternalVal("CRGB *", "leds", (void *)leds);
     addExternalFun("CRGB", "hsv", "(int a1, int a2, int a3)", (void *)POSV);
     addExternalFun("void", "clear", "()", (void *)clearleds);
-    addExternalFun("void", "initleds", "(int *a1, int a2, int a3)", (void *)__initleds);
+    addExternalFun("void", "initleds", "(int *a1, int a2, int a3)", (void *)__initleds); //set driver pins (first arg is pins)
     addExternalFun("uint8_t", "sin8","(uint8_t a1)",(void*)_sin8); //using int here causes value must be between 0 and 16 error!!!
 
     //mapping stuff
     addExternalVal("uint16_t *", "pos", (void *)&map2); //used in map function
     addExternalFun("void", "map", "()", (void *)__map);
 
+    // addExternalFun("void", "map2D", "(int a1, int a2)", (void *)__map2D);
+    // addExternalFun("void", "map3D", "(int a1, int a2, int a3)", (void *)__map3D);
+
     scPreCustomScript += "define width " + to_string(width) + "\n";
     scPreCustomScript += "define height " + to_string(height) + "\n";
     scPreCustomScript += "define NUM_LEDS " + to_string(width * height) + "\n";
-    scPreCustomScript += "define panel_width " + to_string(width) + "\n"; //isn't panel_width always the same as width?
+    scPreCustomScript += "define panel_width " + to_string(panel_width) + "\n";
     scPreCustomScript += "define NB_PANEL_WIDTH " + to_string(NB_PANEL_WIDTH) + "\n";
     scPreCustomScript += "define NUM_STRIPS " + to_string(NUM_STRIPS) + "\n";
     scPreCustomScript += "define NUM_LEDS_PER_STRIP " + to_string(NUM_LEDS_PER_STRIP) + "\n";
-    scPreCustomScript += "uint32_t pins[NUM_STRIPS]={";
+    scPreCustomScript += "uint32_t pins[NUM_STRIPS]={"; //should not be in StarLight as pins is done outside the script
     char sep[2] = "";
     for (int i= 0; i<NUM_STRIPS; i++) {
       scPreCustomScript += sep + to_string(pins[i]);
@@ -351,6 +373,7 @@ public:
   void kill() {
     ppf("kill %s\n", fileName);
     // setupDone = false;
+    SCExecutable.setPrekill(preKill, postKill);
     SCExecutable._kill(); //kill any old tasks
     fps = 0;
     strcpy(fileName, "");
@@ -365,3 +388,27 @@ extern UserModLive *liveM;
 
 
 //asm_parser.h:325:1: warning: control reaches end of non-void function 
+
+// octo.sc 1024 leds
+// max used memory: 24964 mem and stack:1056 free mem:77280
+// afer clean done 89476
+
+// octo.sc 7168 leds
+// max used memory: 24920 mem and stack:0 free mem:49840
+// afer clean done 62100
+
+// balls.sc 1024 leds
+// max used memory: 37172 mem and stack:0 free mem:63160
+// afer clean done 78048
+
+// balls.sc 7168 leds
+// max used memory: 35512 mem and stack:3104 free mem:38896
+// afer clean done 53784
+
+//after update
+// max used memory: 38064 mem and stack:3104 free mem:37008
+// afer clean done 51956
+
+//4096 leds
+// max used memory: 37592 mem and stack:3104 free mem:54160
+// afer clean done 69064
